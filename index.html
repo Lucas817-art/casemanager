@@ -316,9 +316,19 @@ const TEMPLATES = [
    text:'收到【客户/理赔】反馈，反馈内容：【记录要点】。据此推进下一节点。'}
 ];
 
-let cases = load();
-let contacts = loadContacts();
-let meta = loadMeta();
+/* 先声明再初始化，避免在初始化器里引用尚未完成的 let 绑定（TDZ）
+   原来写 let cases = load() 时，load → seed → save → snapshot 会读取 cases 本身，
+   抛 ReferenceError 导致整个脚本中断、页面空白、按钮全部失效。 */
+let cases = [];
+let contacts = [];
+let meta = {};
+(function initData(){
+  try{ cases = load(); }catch(e){ console.error(e); cases = []; }
+  try{ contacts = loadContacts(); }catch(e){ console.error(e); contacts = []; }
+  try{ meta = loadMeta(); }catch(e){ console.error(e); meta = {}; }
+  save(); saveContacts();
+})();
+
 let editingId = null;
 let followCaseId = null;
 let editingContactId = null;
@@ -373,20 +383,24 @@ function seed(){
       createdAt:now, updatedAt:now, note:'', logs:[]
     }
   ];
-  save(demo);
   return demo;
 }
-function save(data){ localStorage.setItem(STORE_KEY, JSON.stringify(data||cases)); snapshot(); }
+function save(data){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(data||cases)); }catch(e){ console.warn('存储失败',e); }
+  snapshot();
+}
 function loadContacts(){
   let arr;
   try{ arr = JSON.parse(localStorage.getItem(CONTACTS_KEY)); }catch(e){ arr = null; }
   if(!Array.isArray(arr)){
     arr = PRESET_CLAIMS.map(p=>({id:uid(), type:'claims', name:p.name, company:'', phone:'', ext:p.ext, email:p.email, address:'', note:''}));
-    saveContacts(arr);
   }
   return arr;
 }
-function saveContacts(arr){ localStorage.setItem(CONTACTS_KEY, JSON.stringify(arr||contacts)); snapshot(); }
+function saveContacts(arr){
+  try{ localStorage.setItem(CONTACTS_KEY, JSON.stringify(arr||contacts)); }catch(e){ console.warn('存储失败',e); }
+  snapshot();
+}
 function loadMeta(){ try{ return JSON.parse(localStorage.getItem(META_KEY)) || {}; }catch(e){ return {}; } }
 function saveMeta(){ localStorage.setItem(META_KEY, JSON.stringify(meta)); }
 function uid(){ return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -396,10 +410,12 @@ function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return toDate
 function diffDays(dateStr){ if(!dateStr) return null; const a=new Date(dateStr+'T00:00:00'); const b=new Date(todayStr()+'T00:00:00'); return Math.round((b-a)/86400000); }
 
 function snapshot(){
-  let hist = []; try{ hist = JSON.parse(localStorage.getItem(BACKUP_KEY)) || []; }catch(e){}
-  hist.unshift({time:new Date().toISOString(), cases:JSON.parse(JSON.stringify(cases)), contacts:JSON.parse(JSON.stringify(contacts))});
-  hist = hist.slice(0,5);
-  localStorage.setItem(BACKUP_KEY, JSON.stringify(hist));
+  try{
+    let hist = []; try{ hist = JSON.parse(localStorage.getItem(BACKUP_KEY)) || []; }catch(e){}
+    hist.unshift({time:new Date().toISOString(), cases:JSON.parse(JSON.stringify(cases)), contacts:JSON.parse(JSON.stringify(contacts))});
+    hist = hist.slice(0,5);
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(hist));
+  }catch(e){ console.warn('快照失败', e); }
 }
 
 const OWNER_LABEL = {me:'我（客户经理）', customer:'客户', claims:'理赔'};
