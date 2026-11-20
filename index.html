@@ -132,31 +132,9 @@
   .backup-list li{margin:6px 0;list-style:none}
   .backup-list .row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
   footer{text-align:center;color:var(--muted);font-size:12px;padding:24px 0}
-  /* ===== 密码锁屏 ===== */
-  #lockScreen{position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#1f4e79,#163a5c 55%,#0f2c47);display:flex;align-items:center;justify-content:center;padding:24px}
-  .lock-card{background:#fff;border-radius:16px;max-width:360px;width:100%;padding:26px 22px;box-shadow:0 18px 50px rgba(0,0,0,.35);text-align:center}
-  .lock-icon{font-size:30px;margin-bottom:6px}
-  .lock-card h2{font-size:18px;color:var(--primary);margin-bottom:4px}
-  .lock-card p{font-size:13px;color:var(--muted);margin-bottom:16px}
-  .lock-input{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:9px;font-size:15px;text-align:center;letter-spacing:1px}
-  .lock-input:focus{outline:none;border-color:var(--primary)}
-  .lock-btn{width:100%;margin-top:12px;padding:11px;border-radius:9px;border:none;background:var(--primary);color:#fff;font-size:15px}
-  .lock-btn:hover{background:var(--primary-dark)}
-  .lock-err{color:var(--danger);font-size:13px;min-height:18px;margin-top:8px}
 </style>
 </head>
 <body>
-<!-- ===== 密码锁屏 ===== -->
-<div id="lockScreen">
-  <div class="lock-card">
-    <div class="lock-icon">🔒</div>
-    <h2>理赔案件管理系统</h2>
-    <p>请输入访问密码</p>
-    <input class="lock-input" id="lockPwd" type="password" placeholder="访问密码" autocomplete="current-password">
-    <button class="lock-btn" onclick="unlockApp()">进入系统</button>
-    <div class="lock-err" id="lockErr"></div>
-  </div>
-</div>
 <header class="top">
   <div class="top-inner">
     <div>
@@ -994,23 +972,8 @@ function closeMask(id){ document.getElementById(id).classList.remove('show'); }
 document.querySelectorAll('.mask').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); }));
 function esc(s){ return String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 
-// 页面启动入口（先验证访问密码，通过后再渲染）
-const ACCESS_PWD = 'GZ88888888';
-function unlockApp(){
-  const input = document.getElementById('lockPwd');
-  if(input.value.trim() === ACCESS_PWD){
-    document.getElementById('lockScreen').style.display = 'none';
-    document.body.style.overflow = '';
-    render();
-  } else {
-    document.getElementById('lockErr').textContent = '密码错误，请重新输入';
-    input.value = '';
-    input.focus();
-  }
-}
-document.getElementById('lockPwd').addEventListener('keydown', e=>{ if(e.key === 'Enter') unlockApp(); });
-document.body.style.overflow = 'hidden';
-document.getElementById('lockPwd').focus();
+// 页面启动入口
+render();
 </script>
 </body>
 </html>
